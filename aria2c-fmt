@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+RESET=$'\033[0m'
+BOLD=$'\033[1m'
+DIM=$'\033[2m'
+C_NAME=$'\033[96m'
+C_HASH=$'\033[93m'
+C_PROG=$'\033[97m'
+C_OK=$'\033[92m'
+C_ERR=$'\033[91m'
+C_BRACKET=$'\033[90m'
+
+URL=""
+OUTPUT=""
+ARGS=()
+next_is_output=0
+
+for arg in "$@"; do
+  case "$arg" in
+  -o) next_is_output=1 ;;
+  -o*) OUTPUT="${arg#-o}" ;;
+  *)
+    if [[ $next_is_output -eq 1 ]]; then
+      OUTPUT="$arg"
+      next_is_output=0
+    else
+      [[ -z "$URL" && "$arg" =~ ^https?:// ]] && URL="$arg" || ARGS+=("$arg")
+    fi
+    ;;
+  esac
+done
+
+FILENAME=$(basename "$OUTPUT")
+get_term_width() { tput cols; }
+
+colorize_progress() {
+  local raw="$1"
+  if [[ "$raw" =~ ^\[(\#[a-f0-9]+)[[:space:]](.+)\]$ ]]; then
+    local hash="${BASH_REMATCH[1]}"
+    local body="${BASH_REMATCH[2]}"
+    echo -ne "${C_BRACKET}[${C_HASH}${hash}${RESET} ${C_PROG}${body}${C_BRACKET}]${RESET}"
+  else
+    echo -ne "${DIM}${raw}${RESET}"
+  fi
+}
+
+print_line() {
+  local name="$1" progress="$2" status="$3" final="$4"
+  local tw
+  tw=$(get_term_width)
+
+  # right side is "progress  status" or just "progress" while downloading
+  local right="$progress"
+  [[ "$final" == "1" ]] && right="$progress  $status"
+
+  # spaces = total width - name length - right length
+  local spaces=$((tw - ${#name} - ${#right}))
+  [[ $spaces -lt 1 ]] && spaces=1
+
+  local colored_progress
+  colored_progress=$(colorize_progress "$progress")
+  local colored_name="${C_NAME}${BOLD}${name}${RESET}"
+
+  if [[ "$final" == "1" ]]; then
+    local colored_status
+    [[ "$status" == "✓" ]] &&
+      colored_status="${C_OK}${BOLD}✓${RESET}" ||
+      colored_status="${C_ERR}${BOLD}✗${RESET}"
+    printf "\r\033[2K%s%${spaces}s%s\n" "${name}" "" "${colored_progress} ${colored_status}"
+  else
+    printf "\r%s%${spaces}s%s" "${name}" "" "${colored_progress}"
+  fi
+}
+
+LAST_PROGRESS="[no progress]"
+EXIT_CODE=1
+
+while IFS= read -r line; do
+  if [[ "$line" =~ ^EXIT:([0-9]+)$ ]]; then
+    EXIT_CODE="${BASH_REMATCH[1]}"
+    continue
+  fi
+
+  [[ "$line" =~ ^(error:|warn:|notice:|\[ERROR\]|\[WARN\]) ]] && continue
+
+  if [[ "$line" =~ \[(\#[a-f0-9]+[^]]*)\] ]]; then
+    LAST_PROGRESS="[${BASH_REMATCH[1]}]"
+    print_line "$FILENAME" "$LAST_PROGRESS" "" "0"
+  fi
+
+done < <(
+  /usr/bin/aria2c \
+    --console-log-level=error \
+    --summary-interval=1 \
+    --download-result=hide \
+    "${ARGS[@]}" \
+    -o "$OUTPUT" \
+    "$URL" 2>&1
+  echo "EXIT:$?"
+)
+
+[[ "$EXIT_CODE" == "0" ]] && STATUS="✓" || STATUS="✗"
+print_line "$FILENAME" "$LAST_PROGRESS" "$STATUS" "1"
