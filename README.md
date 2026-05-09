@@ -6,6 +6,7 @@ You wanna download fast but also has nice output? aria2c-fmt is your answer
 ## Preview
 
 ![aria2c-fmt preview](preview.png)
+![aria2c-fmt_preview_](preview2.png)
 
 ````
 
