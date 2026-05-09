@@ -30,7 +30,11 @@ for arg in "$@"; do
   esac
 done
 
-FILENAME=$(basename "$OUTPUT")
+FILENAME=$(basename "$OUTPUT" .part)
+if [[ "$FILENAME" == *.sig* ]]; then
+  /usr/bin/aria2c --console-log-level=error --download-result=hide "${ARGS[@]}" -o "$OUTPUT" "$URL" &>/dev/null
+  exit $?
+fi
 get_term_width() { tput cols; }
 
 colorize_progress() {
