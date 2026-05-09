@@ -8,25 +8,23 @@ You wanna download fast but also has nice output? aria2c-fmt is your answer
 ![aria2c-fmt preview](preview.png)
 ![aria2c-fmt_preview_](preview2.png)
 
-````
-
 ---
 
 ## Features
 
-* Clean single-line progress output
-* Colored progress formatting
-* Works with pacman `XferCommand`
-* Uses `aria2c` for parallel downloading
-* Lightweight pure Bash script
-* Minimal terminal clutter
+- Clean single-line progress output
+- Colored progress formatting
+- Works with pacman `XferCommand`
+- Uses `aria2c` for parallel downloading
+- Lightweight pure Bash script
+- Minimal terminal clutter
 
 ---
 
 ## Requirements
 
-* Bash
-* aria2
+- Bash
+- aria2
 
 Install aria2:
 
@@ -76,11 +74,10 @@ sudo pacman -Syu
 
 ## Notes
 
-* Designed specifically for pacman
-* Uses `aria2c` internally
-* Supports standard aria2 arguments
-* Download speed and connections can be customized in `pacman.conf`
-````
+- Designed specifically for pacman
+- Uses `aria2c` internally
+- Supports standard aria2 arguments
+- Download speed and connections can be customized in `pacman.conf`
 
 ## LICENSE
 
